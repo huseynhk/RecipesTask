@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { GetDatas } from "./src/api/getRequest";
+import { GetDatas } from "./api/getRequest";
 import { toast } from "react-toastify";
-import { Modal, Button } from "react-bootstrap";
+import { Modal, Button, Spinner } from "react-bootstrap";
 
 function RecipesManager() {
   const [datas, setDatas] = useState([]);
   const [recipes, setRecipes] = useState([]);
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [modalData, setModalData] = useState({ type: "", data: [] });
+  const [modalIsOpenRmv, setModalIsOpenRmv] = useState(false);
   const [itemToRemove, setItemToRemove] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const openModal = (type, data) => {
     setModalData({ type, data });
@@ -16,13 +18,16 @@ function RecipesManager() {
   };
 
   const handleData = async () => {
+    setLoading(true);
     try {
       const response = await GetDatas();
       setDatas(response.recipes);
+      setLoading(false);
     } catch (error) {
       toast.error("Failed to load products!", {
         autoClose: 1500,
       });
+      setLoading(false);
     }
   };
 
@@ -69,12 +74,12 @@ function RecipesManager() {
         autoClose: 1500,
       });
     }
-    setModalIsOpen(false);
+    setModalIsOpenRmv(false);
   };
 
   const openRemoveModal = (item) => {
     setItemToRemove(item);
-    setModalIsOpen(true);
+    setModalIsOpenRmv(true);
   };
 
   const isExist = (itemId) => {
@@ -89,54 +94,63 @@ function RecipesManager() {
       <div
         style={{ display: "flex", flexWrap: "wrap", justifyContent: "center" }}
       >
-        {datas?.map((item) => (
+        {loading ? (
           <div
-            key={item.id}
-            style={{
-              margin: "10px",
-              width: "250px",
-              height: "250px",
-              backgroundColor: "#cefefd",
-              border: "2px solid #17faf7",
-              borderRadius: "8px",
-              boxShadow: "10 12px 18px rgba(250, 185, 243, 0.4)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              padding: "10px",
-            }}
+            className="d-flex justify-content-center"
+            style={{ width: "100%", height:"100vh" }}
           >
-            <img
-              src={item.image}
-              alt={item.name}
+            <Spinner animation="border" variant="primary" className="mt-5"/>
+          </div>
+        ) : (
+          datas?.map((item) => (
+            <div
+              key={item.id}
               style={{
-                width: "100px",
-                height: "100px",
-                objectFit: "cover",
+                margin: "10px",
+                width: "250px",
+                height: "250px",
+                backgroundColor: "#cefefd",
+                border: "2px solid #17faf7",
                 borderRadius: "8px",
-              }}
-            />
-            <p className="mt-2">{item.name}</p>
-            <div>
-              Cuisine: <span>{item.cuisine}</span>
-            </div>
-
-            <button
-              onClick={() => addRecipes(item)}
-              style={{
-                marginTop: "10px",
-                padding: "5px 10px",
-                backgroundColor: isExist(item.id) ? "#007a72" : "#00c6f3",
-                color: "white",
-                border: "none",
-                borderRadius: "5px",
-                cursor: "pointer",
+                boxShadow: "10 12px 18px rgba(250, 185, 243, 0.4)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                padding: "10px",
               }}
             >
-              {isExist(item.id) ? "Added" : "Get Recipe"}
-            </button>
-          </div>
-        ))}
+              <img
+                src={item.image}
+                alt={item.name}
+                style={{
+                  width: "100px",
+                  height: "100px",
+                  objectFit: "cover",
+                  borderRadius: "8px",
+                }}
+              />
+              <p className="mt-2">{item.name}</p>
+              <div>
+                Cuisine: <span>{item.cuisine}</span>
+              </div>
+
+              <button
+                onClick={() => addRecipes(item)}
+                style={{
+                  marginTop: "10px",
+                  padding: "5px 10px",
+                  backgroundColor: isExist(item.id) ? "#01615a" : "#00abd1",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                }}
+              >
+                {isExist(item.id) ? "Added" : "Get Recipe"}
+              </button>
+            </div>
+          ))
+        )}
       </div>
       <h4 className="mt-2">Your Pokémon Team</h4>
       <ul style={{ listStyle: "none", padding: 0, marginTop: "20px" }}>
@@ -207,8 +221,7 @@ function RecipesManager() {
         </Modal.Footer>
       </Modal>
 
-
-      <Modal show={modalIsOpen} onHide={() => setModalIsOpen(false)}>
+      <Modal show={modalIsOpenRmv} onHide={() => setModalIsOpenRmv(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirm Removal</Modal.Title>
         </Modal.Header>
@@ -217,7 +230,7 @@ function RecipesManager() {
           from your team?
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setModalIsOpen(false)}>
+          <Button variant="secondary" onClick={() => setModalIsOpenRmv(false)}>
             Cancel
           </Button>
           <Button variant="danger" onClick={deleteRecipe}>
